@@ -1,0 +1,11 @@
+python -m robocasa.scripts.download_datasets --ds_types human_im --tasks PnPCounterToCab
+
+
+python  robomimic/scripts/config_gen/icl_xfmr_gen.py --name fawad_v2
+
+python /home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/robomimic/scripts/train.py --config /home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/train_config.json
+
+
+python robomimic/scripts/config_gen/eval_ckpt.py --ckpt /home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/icl_xfmr/11-27-fawad_v2/seed_123_ds_human-50/20251127100956/models/model_epoch_1000.pth --name icl_xmfr
+
+python /home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/robomimic/scripts/train.py --config /home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/eval_config.json --eval_only

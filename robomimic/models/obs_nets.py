@@ -20,7 +20,7 @@ import torch.distributions as D
 import torchvision.transforms as T
 from torch.nn.utils import spectral_norm
 
-# from mamba_ssm import Mamba
+from mamba_ssm import Mamba
 from transformers import AutoProcessor
 import clip
 
@@ -1222,8 +1222,10 @@ class ICLObservationGroupEncoder(Module):
             # )
             # # self.action_network = LFQVAE(
             #     feature_dim=action_input_shape, latent_dim=action_output_shape
-            self.action_network = LLFQVAE_V4( # This is the main LipVQ-VAE action tokenizer in the paper
-                feature_dim=action_input_shape, latent_dim=action_output_shape
+            self.action_network = (
+                LLFQVAE_V4(  # This is the main LipVQ-VAE action tokenizer in the paper
+                    feature_dim=action_input_shape, latent_dim=action_output_shape
+                )
             )
         elif ln_act_enabled:
             self.action_network = Mamba(

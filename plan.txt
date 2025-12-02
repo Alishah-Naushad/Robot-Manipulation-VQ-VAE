@@ -1,0 +1,7 @@
+Context Actions → VQ-VAE Encoder → Hierarchical Quantization (Z → Q) 
+                                  ↓
+                          Quantized Embeddings [B, T, D]
+                                  ↓
+              Transformer Policy (with observations)
+                                  ↓
+                    Continuous Action Predictions [B, T, action_dim]

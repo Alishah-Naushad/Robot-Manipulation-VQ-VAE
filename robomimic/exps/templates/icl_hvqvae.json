@@ -1,15 +1,15 @@
 {
-    "algo_name": "icl",
+    "algo_name": "icl_hvqvae",
     "experiment": {
-        "name": "test",
+        "name": "icl_transformer_hvqvae",
         "validate": true,
         "logging": {
             "terminal_output_to_txt": true,
             "log_tb": true,
             "log_wandb": false,
-            "wandb_proj_name": "debug"
+            "wandb_proj_name": "icl_hvqvae"
         },
-        "mse":{},
+        "mse": {},
         "save": {
             "enabled": true,
             "every_n_seconds": null,
@@ -38,7 +38,7 @@
     },
     "train": {
         "data": null,
-        "output_dir": "../icl_transformer_trained_models",
+        "output_dir": "../icl_hvqvae_trained_models",
         "num_data_workers": 0,
         "hdf5_cache_mode": "low_dim",
         "hdf5_use_swmr": true,
@@ -72,6 +72,18 @@
                 "regularization": {
                     "L2": 0.01
                 }
+            },
+            "vqvae": {
+                "optimizer_type": "adamw",
+                "learning_rate": {
+                    "initial": 0.0001,
+                    "decay_factor": 1.0,
+                    "epoch_schedule": [],
+                    "scheduler_type": "constant"
+                },
+                "regularization": {
+                    "L2": 0.0001
+                }
             }
         },
         "loss": {
@@ -84,11 +96,7 @@
             "enabled": false
         },
         "gmm": {
-            "enabled": true,
-            "num_modes": 5,
-            "min_std": 0.005,
-            "std_activation": "softplus",
-            "low_noise_eval": true
+            "enabled": false
         },
         "vae": {
             "enabled": false
@@ -101,6 +109,7 @@
             "supervise_all_steps": true,
             "pred_future_acs": true,
             "causal": false,
+            "context_length": 10,
             "num_layers": 6,
             "embed_dim": 512,
             "num_heads": 8,
@@ -116,6 +125,7 @@
                 "num_layers_per_stage": 10,
                 "lambda_rec": 1.0,
                 "beta_ema": 0.8,
+                "dropout": 0.1,
                 "dead_code_threshold_z": 3,
                 "dead_code_threshold_q": 1,
                 "pretrain_epochs": 0,

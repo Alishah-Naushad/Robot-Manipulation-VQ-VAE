@@ -26,6 +26,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.pre-commit-config.yaml
+cuda_11.8.0_520.61.05_linux.run
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -145,3 +147,4 @@ robocasa/models/assets/textures
 
 # midjourney-generated textures
 robocasa/models/assets/generative_textures
+

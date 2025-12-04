@@ -833,6 +833,10 @@ class ICLTransformer(ICL):
             input_batch["actions"] = batch["actions"][:, h - 1, :]
 
         if self.pred_future_acs:
+            print("actions.shape:", input_batch["actions"].shape)
+            print("expected h:", h)
+            print("batch keys:", input_batch.keys())
+
             assert input_batch["actions"].shape[1] == h
 
         input_batch = TensorUtils.to_device(
@@ -1297,44 +1301,48 @@ class ICLTransformerHVQVAE(ICLTransformer):
 
     def get_action(self, obs_dict, context_batch, goal_dict=None):
         """
-        Get policy action outputs with optional VQ-VAE tokenization.
+        Get policy action outputs using the HierarchicalVQVAE decoder outputs
+        as action representations for the transformer policy.
 
         Args:
             obs_dict (dict): current observation
             context_batch (dict): context observations and actions
-            goal_dict (dict): (optional) goal
+            goal_dict (dict, optional): goal
 
         Returns:
-            action (torch.Tensor): action tensor
+            torch.Tensor: action tensor
         """
         assert not self.nets.training
 
         context_obs = context_batch["obs"]
         context_actions = context_batch["actions"]
 
-        # Process context actions through VQ-VAE if enabled
-        action_inputs = None
+        # -----------------------------------------------------------
+        # 1. PROCESS CONTEXT ACTIONS THROUGH THE HIERARCHICAL VQ-VAE
+        # -----------------------------------------------------------
         if self.vq_vae_enabled:
-            # Encode context actions
-            vqvae_out = self.nets["vqvae"].encode(context_actions)
+            # Forward through HVQ-VAE to get embeddings and reconstructed actions
+            vqvae_out = self.nets["vqvae"].forward(context_actions, training=False)
 
-            # Use quantized cluster embeddings as action representation
-            action_inputs = vqvae_out["quantized_q"]  # [B, T, D]
+            # Use the reconstructed actions from decoder as input to policy
+            action_inputs = vqvae_out["reconstructed_actions"]  # [B, T, action_dim]
 
-            # Optional: use FIFA soft assignment for smoother inference
-            if self.vqvae_use_fifa:
-                soft_probs = self.nets["vqvae"].compute_soft_assignment(
-                    vqvae_out["embeddings"]
-                )
-                # Can use soft_probs for weighted combination of cluster embeddings
-                # For now, we use hard assignment (quantized_q)
+        else:
+            # If VQ-VAE disabled, use raw actions
+            action_inputs = context_actions
 
-        # Forward through transformer policy
+        # -----------------------------------------------------------
+        # 2. TRANSFORMER POLICY FORWARD
+        # -----------------------------------------------------------
         output = self.nets["policy"](
-            obs_dict, actions=context_actions, goal_dict=goal_dict
+            obs_dict,
+            actions=action_inputs,
+            goal_dict=goal_dict,
         )
 
-        # Extract action based on prediction mode
+        # -----------------------------------------------------------
+        # 3. EXTRACT FINAL ACTION BASED ON PREDICTION RULE
+        # -----------------------------------------------------------
         if self.supervise_all_steps:
             if self.algo_config.transformer.pred_future_acs:
                 output = output[:, 0, :]

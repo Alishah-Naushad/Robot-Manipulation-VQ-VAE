@@ -75,7 +75,7 @@
                 "obj_instance_split": "B"
             }
         },
-        "ckpt_path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/seed_123_ds_human-50/20251129004921/models/model_epoch_1000_fixed.pth"
+        "ckpt_path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/1024_512/20251202085623/models/model_epoch_300.pth"
     },
     "train": {
         "data": [
@@ -129,7 +129,7 @@
                 "eval": true
             }
         ],
-        "output_dir": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/robocasa/11-29-fawad_hierarchal_v1",
+        "output_dir": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/robocasa/11-29-fawad_hierarchal_v1/1024_512",
         "num_data_workers": 0,
         "hdf5_cache_mode": null,
         "hdf5_use_swmr": true,
@@ -137,9 +137,9 @@
         "hdf5_normalize_obs": false,
         "hdf5_filter_key": null,
         "hdf5_validation_filter_key": null,
-        "seq_length": 10,
+        "seq_length": 16,
         "pad_seq_length": true,
-        "frame_stack": 10,
+        "frame_stack": 16,
         "pad_frame_stack": true,
         "dataset_keys": [
             "actions"
@@ -279,7 +279,7 @@
         },
         "rnn": {
             "enabled": false,
-            "horizon": 10,
+            "horizon": 16,
             "hidden_dim": 400,
             "rnn_type": "LSTM",
             "num_layers": 2,
@@ -375,7 +375,7 @@
         }
     },
     "meta": {
-        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/seed_123_ds_human-50/20251129004921/models/../config.json",
+        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/1024_512/20251202085623/config.json",
         "hp_keys": [
             "seed",
             "ds",
@@ -384,7 +384,7 @@
         "hp_values": [
             123,
             "ckpt_datasets",
-            "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/seed_123_ds_human-50/20251129004921/models/model_epoch_1000.pth"
+            "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/1024_512/20251202085623/models/model_epoch_300.pth"
         ]
     }
 }

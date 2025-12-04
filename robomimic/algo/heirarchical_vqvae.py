@@ -283,7 +283,7 @@ class HierarchicalVQVAE(nn.Module):
         self.use_cosine = use_cosine
         self.normalize_after_ema = normalize_after_ema
         self.verbose = verbose
-
+        self.beta = beta
         # codebooks: shape [K, D]
         self.register_buffer(
             "codebook_z", torch.randn(self.num_subclusters, self.embed_dim)

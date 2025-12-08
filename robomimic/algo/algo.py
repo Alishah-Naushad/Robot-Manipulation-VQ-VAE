@@ -357,7 +357,9 @@ class Algo(object):
             if k in unexpected_keys:
                 print(f"[deserialize] Skipping unexpected key in checkpoint: {k}")
             else:
+                # print(k)
                 cleaned_dict[k] = v
+        # input('wewewew')
 
         # Now load the cleaned weights
         self.nets.load_state_dict(cleaned_dict, strict=True)

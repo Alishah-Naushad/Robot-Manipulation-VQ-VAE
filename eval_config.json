@@ -1,7 +1,7 @@
 {
     "algo_name": "icl",
     "experiment": {
-        "name": "seed_123_ds_ckpt_datasets",
+        "name": "512_128_lipvq",
         "validate": false,
         "logging": {
             "terminal_output_to_txt": true,
@@ -75,7 +75,7 @@
                 "obj_instance_split": "B"
             }
         },
-        "ckpt_path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/1024_512/20251202085623/models/model_epoch_300.pth"
+        "ckpt_path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm/20251206021655/models/model_epoch_300.pth"
     },
     "train": {
         "data": [
@@ -137,9 +137,9 @@
         "hdf5_normalize_obs": false,
         "hdf5_filter_key": null,
         "hdf5_validation_filter_key": null,
-        "seq_length": 16,
+        "seq_length": 64,
         "pad_seq_length": true,
-        "frame_stack": 16,
+        "frame_stack": 64,
         "pad_frame_stack": true,
         "dataset_keys": [
             "actions"
@@ -236,7 +236,7 @@
             "low_noise_eval": true
         },
         "gmm": {
-            "enabled": false,
+            "enabled": true,
             "num_modes": 5,
             "min_std": 0.005,
             "std_activation": "softplus",
@@ -375,7 +375,7 @@
         }
     },
     "meta": {
-        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/1024_512/20251202085623/config.json",
+        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm/20251206021655/config.json",
         "hp_keys": [
             "seed",
             "ds",
@@ -384,7 +384,7 @@
         "hp_values": [
             123,
             "ckpt_datasets",
-            "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/1024_512/20251202085623/models/model_epoch_300.pth"
+            "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm/20251206021655/models/model_epoch_300.pth"
         ]
     }
 }

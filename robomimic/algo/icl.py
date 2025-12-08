@@ -78,9 +78,11 @@ def algo_config_to_class(algo_config):
         if rnn_enabled:
             algo_class, algo_kwargs = ICLRNN_GMM, {}
         elif transformer_enabled:
-            print("here2")
-            print("*" * 25)
-            algo_class, algo_kwargs = ICLTransformerHVQVAE, {}
+            print("GMM BEING USED ")
+            print("*" * 50)
+            # algo_class, algo_kwargs = ICLTransformerHVQVAE, {}
+            algo_class, algo_kwargs = ICLTransformer_GMM, {}
+
         else:
             algo_class, algo_kwargs = ICLGMM, {}
     elif vae_enabled:
@@ -240,11 +242,13 @@ class ICL(PolicyAlgo):
 
         # gradient step
         info = OrderedDict()
+
         policy_grad_norms = TorchUtils.backprop_for_loss(
             net=self.nets["policy"],
             optim=self.optimizers["policy"],
             loss=losses["action_loss"],
             max_grad_norm=self.global_config.train.max_grad_norm,
+            retain_graph=True,
         )
         info["policy_grad_norms"] = policy_grad_norms
 
@@ -833,9 +837,6 @@ class ICLTransformer(ICL):
             input_batch["actions"] = batch["actions"][:, h - 1, :]
 
         if self.pred_future_acs:
-            print("actions.shape:", input_batch["actions"].shape)
-            print("expected h:", h)
-            print("batch keys:", input_batch.keys())
 
             assert input_batch["actions"].shape[1] == h
 
@@ -958,10 +959,10 @@ class ICLTransformerHVQVAE(ICLTransformer):
                 embed_dim=vqvae_config.get(
                     "embed_dim", self.algo_config.transformer.embed_dim
                 ),
-                num_stages=vqvae_config.get("num_stages", 2),
-                num_layers_per_stage=vqvae_config.get("num_layers_per_stage", 10),
-                beta=vqvae_config.get("beta_ema", 0.8),
-                dropout=vqvae_config.get("dropout", 0.1),
+                # num_stages=vqvae_config.get("num_stages", 2),
+                # num_layers_per_stage=vqvae_config.get("num_layers_per_stage", 10),
+                # beta=vqvae_config.get("beta_ema", 0.8),
+                # dropout=vqvae_config.get("dropout", 0.1),
                 kmeans_init=True,
             )
 
@@ -1085,7 +1086,7 @@ class ICLTransformerHVQVAE(ICLTransformer):
 
             # Use quantized cluster embeddings as action representation
             # This provides a compressed, tokenized representation of actions
-            action_inputs = vqvae_outputs["quantized_q"]  # [B, T, D]
+            action_inputs = vqvae_outputs["reconstructed_actions"]  # [B, T, D]
 
             # Optional: can also use cluster indices directly for discrete tokens
             # action_indices = vqvae_outputs["q_indices"]  # [B, T]
@@ -1385,7 +1386,7 @@ class ICLTransformerHVQVAE(ICLTransformer):
                 "num_subclusters": self.nets["vqvae"].num_subclusters,
                 "num_clusters": self.nets["vqvae"].num_clusters,
                 "embed_dim": self.nets["vqvae"].embed_dim,
-                "beta": self.nets["vqvae"].beta,
+                # "beta": self.nets["vqvae"].beta,
             }
 
         return state_dict
@@ -1439,6 +1440,36 @@ class ICLTransformer_GMM(ICLTransformer):
             self.vq_optimizer = optim.AdamW(
                 self.vq_vae_model.parameters(), lr=1e-3, weight_decay=1e-4
             )  # Adjust lr and weight_decay as needed
+
+    def train_on_batch(self, batch, epoch, validate=False):
+        """
+        Training on a single batch with combined VQ-VAE + policy loss.
+        Single backward pass for memory efficiency.
+        """
+        with TorchUtils.maybe_no_grad(no_grad=validate):
+            info = super(ICL, self).train_on_batch(batch, epoch, validate=validate)
+            predictions = self._forward_training(batch)
+
+            if not validate:
+                # ✓ Compute losses (but don't backward yet)
+                losses = self._compute_losses(predictions, batch)
+
+                # ✓ Get VQ-VAE loss
+                if self.vq_vae_enabled:
+                    vq_loss = self.nets["policy"].nets["encoder"]._vq_vae_loss
+                else:
+                    vq_loss = 0
+
+                # ✓ Backward BOTH losses together in _train_step
+                step_info = self._train_step(losses, vq_loss)
+                info.update(step_info)
+            else:
+                losses = self._compute_losses(predictions, batch)
+
+            info["predictions"] = TensorUtils.detach(predictions)
+            info["losses"] = TensorUtils.detach(losses)
+
+        return info
 
     def _forward_training(self, batch, epoch=None):
         """
@@ -1517,13 +1548,44 @@ class ICLTransformer_GMM(ICLTransformer):
         # loss is just negative log-likelihood of action targets
         action_loss = -predictions["log_probs"].mean()
 
-        if self.vq_vae_enabled:
-            self._vq_vae_loss.backward()
-            self.vq_optimizer.step()
+        # if self.vq_vae_enabled:
+        #     self._vq_vae_loss.backward()
+        #     self.vq_optimizer.step()
         return OrderedDict(
             log_probs=-action_loss,
             action_loss=action_loss,
         )
+
+    def _train_step(self, losses, vq_loss=0):
+        """
+        For hierarchical VQ-VAE where encoder is part of policy,
+        use combined loss for end-to-end training with single backward.
+
+        Args:
+            losses (dict): policy losses
+            vq_loss (torch.Tensor): VQ-VAE loss from encoder
+        """
+        info = OrderedDict()
+
+        # ✓ Combine policy loss with VQ-VAE loss for single backward
+        combined_loss = losses["action_loss"] + 0.1 * vq_loss
+
+        # ✓ Single backward pass - memory efficient, no graph conflicts
+        policy_grad_norms = TorchUtils.backprop_for_loss(
+            net=self.nets["policy"],
+            optim=self.optimizers["policy"],
+            loss=combined_loss,
+            max_grad_norm=self.global_config.train.max_grad_norm,
+            retain_graph=False,  # Single backward, no need to retain
+        )
+        info["policy_grad_norms"] = policy_grad_norms
+
+        # Step through optimizers
+        for k in self.lr_schedulers:
+            if self.lr_schedulers[k] is not None:
+                self.lr_schedulers[k].step()
+
+        return info
 
     def log_info(self, info):
         """
@@ -1540,3 +1602,19 @@ class ICLTransformer_GMM(ICLTransformer):
         if "policy_grad_norms" in info:
             log["Policy_Grad_Norms"] = info["policy_grad_norms"]
         return log
+
+    def deserialize(self, state_dict):
+        """
+        Load model from serialized state.
+        Handles VQ-VAE state if present.
+        """
+        # Check if VQ-VAE was enabled in saved model
+        if state_dict.get("vq_vae_enabled", False):
+            if not self.vq_vae_enabled:
+                print(
+                    "[Warning] Saved model has VQ-VAE but current config doesn't. Enable vq_vae in config."
+                )
+        print("*" * 50)
+        print("Desersialize used")
+        # input('wewe')
+        return super(ICLTransformer, self).deserialize(state_dict)

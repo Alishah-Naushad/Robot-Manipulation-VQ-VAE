@@ -45,6 +45,7 @@ from robomimic.models.obs_core import (
 from robomimic.models.vq_vae.backbone import VQVAE
 from robomimic.models.vq_vae.backbone_lfqvae import LFQVAE
 from robomimic.models.vq_vae.backbone_lfqvae_v5 import LLFQVAE_V4
+from robomimic.models.vq_vae.hq_vae import HierarchicalLFQHVQVAE
 from robomimic.models.vq_vae.backbone_lfqvae_lipschitz import LFQVAE
 from robomimic.models.bin_action.backbone import AdaptiveBinActionEmbedding
 from robomimic.models.transformers import PositionalEncoding, GPT_Backbone
@@ -1222,10 +1223,17 @@ class ICLObservationGroupEncoder(Module):
             # )
             # # self.action_network = LFQVAE(
             #     feature_dim=action_input_shape, latent_dim=action_output_shape
-            self.action_network = (
-                LLFQVAE_V4(  # This is the main LipVQ-VAE action tokenizer in the paper
-                    feature_dim=action_input_shape, latent_dim=action_output_shape
-                )
+            # self.action_network = (
+            #     LLFQVAE_V4(  # This is the main LipVQ-VAE action tokenizer in the paper
+            #         feature_dim=action_input_shape, latent_dim=action_output_shape
+            #     )
+            # )
+            self.action_network = HierarchicalLFQHVQVAE(
+                feature_dim=action_input_shape,
+                z_dim=action_output_shape,
+                q_dim=action_output_shape,
+                num_z_codes=512,
+                num_q_codes=128,
             )
         elif ln_act_enabled:
             self.action_network = Mamba(
@@ -1297,16 +1305,21 @@ class ICLObservationGroupEncoder(Module):
             # pass through encoder
             outputs.append(self.nets[obs_group].forward(inputs[obs_group]))
 
-        seq_len = 10  # FIXME
+        seq_len = 64  # FIXME
         batch_size = outputs[0].data.shape[0]
         batch_size = int(batch_size / seq_len)
+        batch_size = 16
 
         obs = torch.cat(outputs, dim=-1)
         context_obs = self.nets["obs"].forward(prompt_obs)
         context_obs = torch.cat([context_obs], dim=-1)
 
         if self.fast_enabled:
+            print("before prompt actions size")
+            print(prompt_actions.shape)
             prompt_actions = prompt_actions.view(batch_size, seq_len, -1)
+            print("after prompt actions size")
+            print(prompt_actions.shape)
             aggregated_vector_list = []
             for idx in range(batch_size):
                 prompt_actions_idx = prompt_actions[idx]
@@ -1335,7 +1348,10 @@ class ICLObservationGroupEncoder(Module):
             context_actions = torch.cat(aggregated_vector_list, dim=0)
             context_actions = self.action_network(context_actions).squeeze(0)
         elif self.vq_vae_enabled:
-            context_actions, loss = self.action_network(prompt_actions)
+            output_dict = self.action_network(prompt_actions)
+            loss = output_dict["loss"]
+            context_actions = output_dict["q_q"]
+            # context_actions, loss = self.action_network(prompt_actions)
             self._vq_vae_loss = loss
         elif self.ln_act_enabled:
             prompt_actions = prompt_actions.view(batch_size, seq_len, -1)

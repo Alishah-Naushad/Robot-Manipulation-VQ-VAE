@@ -63,7 +63,7 @@ class ICLConfig(BaseConfig):
         self.algo.gaussian.low_noise_eval = True
 
         # stochastic GMM policy settings
-        self.algo.gmm.enabled = False
+        self.algo.gmm.enabled = True
         self.algo.gmm.num_modes = 5
         self.algo.gmm.min_std = 0.0001
         self.algo.gmm.std_activation = "softplus"
@@ -108,8 +108,8 @@ class ICLConfig(BaseConfig):
 
         # Transformer policy settings
         self.algo.transformer.enabled = False
-        self.algo.transformer.context_length = 16
-        self.algo.transformer.embed_dim = 512
+        self.algo.transformer.context_length = 64
+        self.algo.transformer.embed_dim = 1024
         self.algo.transformer.num_layers = 6
         self.algo.transformer.num_heads = 8
         self.algo.transformer.emb_dropout = 0.1

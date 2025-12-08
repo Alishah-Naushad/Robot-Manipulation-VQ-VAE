@@ -1,7 +1,7 @@
 {
     "algo_name": "icl",
     "experiment": {
-        "name": "1024_512",
+        "name": "512_128_lipvq_gmm",
         "validate": false,
         "logging": {
             "terminal_output_to_txt": true,
@@ -120,16 +120,16 @@
         "hdf5_load_next_obs": false,
         "hdf5_normalize_obs": false,
         "hdf5_filter_key": null,
-        "seq_length": 16,
+        "seq_length": 64,
         "pad_seq_length": true,
-        "frame_stack": 16,
+        "frame_stack": 64,
         "pad_frame_stack": true,
         "dataset_keys": [
             "actions"
         ],
         "goal_mode": null,
         "cuda": true,
-        "batch_size": 64,
+        "batch_size": 16,
         "num_epochs": 1000,
         "max_grad_norm": 100.0,
         "seed": 123,
@@ -197,7 +197,7 @@
             "enabled": false
         },
         "gmm": {
-            "enabled": false,
+            "enabled": true,
             "num_modes": 5,
             "min_std": 0.005,
             "std_activation": "softplus",

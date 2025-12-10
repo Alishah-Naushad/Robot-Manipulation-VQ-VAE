@@ -107,9 +107,9 @@ class ICLConfig(BaseConfig):
         self.algo.rnn.kwargs.do_not_lock_keys()
 
         # Transformer policy settings
-        self.algo.transformer.enabled = False
-        self.algo.transformer.context_length = 64
-        self.algo.transformer.embed_dim = 1024
+        self.algo.transformer.enabled = True
+        self.algo.transformer.context_length = 16
+        self.algo.transformer.embed_dim = 512
         self.algo.transformer.num_layers = 6
         self.algo.transformer.num_heads = 8
         self.algo.transformer.emb_dropout = 0.1
@@ -121,22 +121,22 @@ class ICLConfig(BaseConfig):
         self.algo.transformer.bin_enabled = False
         self.algo.transformer.vq_vae_enabled = True
         self.algo.transformer.ln_act_enabled = True
-        self.algo.transformer.supervise_all_steps = False
+        self.algo.transformer.supervise_all_steps = True
         self.algo.transformer.nn_parameter_for_timesteps = True
-        self.algo.transformer.pred_future_acs = False
-        self.algo.transformer.causal = True
+        self.algo.transformer.pred_future_acs = True
+        self.algo.transformer.causal = False
 
         # Hierarchical VQ-VAE settings
         self.algo.transformer.vqvae = Config()
-        self.algo.transformer.vqvae.num_subclusters = 1024
-        self.algo.transformer.vqvae.num_clusters = 512
+        self.algo.transformer.vqvae.num_subclusters = 512
+        self.algo.transformer.vqvae.num_clusters = 128
         self.algo.transformer.vqvae.embed_dim = 512
         self.algo.transformer.vqvae.num_stages = 2
         self.algo.transformer.vqvae.num_layers_per_stage = 4
         self.algo.transformer.vqvae.lambda_rec = 0.002
         self.algo.transformer.vqvae.beta_ema = 0.8
         self.algo.transformer.vqvae.dropout = 0.1
-        self.algo.transformer.vqvae.dead_code_threshold_z = 3
+        self.algo.transformer.vqvae.dead_code_threshold_z = 2
         self.algo.transformer.vqvae.dead_code_threshold_q = 1
         self.algo.transformer.vqvae.pretrain_epochs = 0
         self.algo.transformer.vqvae.use_fifa_inference = True

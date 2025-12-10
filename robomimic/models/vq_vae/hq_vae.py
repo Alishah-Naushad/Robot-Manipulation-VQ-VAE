@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.cluster import KMeans
 
+# import faiss
 
 # ----------------------------
 # LFQ Quantizer WITH EMA
@@ -89,17 +90,19 @@ class LFQQuantizerEMA_KMeans(nn.Module):
         B, D = z_e.shape
 
         # ---- Run KMEANS on first forward ----
-        # Disable this during inference
         if self.training and not self.initialized:
             self.kmeans_init(z_e)
 
-        # ---- Lipschitz sign-flip rule ----
-        z_e_sign = (2 * torch.sign(z_e) + 1).clamp(max=1).unsqueeze(1)
-        z_e_expanded = z_e.unsqueeze(1)
-        cb_expanded = self.codebook.unsqueeze(0)
+        # ---- Nearest neighbor search (GPU-accelerated) ----
+        # Compute L2 distances directly on GPU
+        # ||a - b||^2 = ||a||^2 + ||b||^2 - 2*a·b
+        z_e_norm = (z_e**2).sum(dim=1, keepdim=True)  # [B, 1]
+        cb_norm = (self.codebook**2).sum(dim=1, keepdim=True)  # [num_codes, 1]
+        dots = z_e @ self.codebook.T  # [B, num_codes]
+        distances = z_e_norm + cb_norm.T - 2 * dots  # [B, num_codes]
+        indices = distances.argmin(dim=1)  # [B]
 
-        distances = torch.norm(z_e_sign * (z_e_expanded - cb_expanded), dim=-1)
-        indices = torch.argmin(distances, dim=-1)
+        # Get quantized embeddings
         z_q = self.codebook[indices]
 
         # ---------------------------------------------------------
@@ -107,18 +110,21 @@ class LFQQuantizerEMA_KMeans(nn.Module):
         # ---------------------------------------------------------
         if self.training:
             with torch.no_grad():
-                one_hot = F.one_hot(indices, self.num_codes).float()
-                cluster_size = one_hot.sum(0)
+                one_hot = F.one_hot(indices, self.num_codes).float()  # [B, num_codes]
+                cluster_size = one_hot.sum(0, keepdim=True)  # [1, num_codes]
 
-                self.ema_cluster_size.mul_(self.decay).add_(
-                    cluster_size, alpha=1 - self.decay
+                # Update EMA
+                cluster_size_squeezed = cluster_size.squeeze(0)
+                self.ema_cluster_size.copy_(
+                    self.decay * self.ema_cluster_size
+                    + (1 - self.decay) * cluster_size_squeezed
+                )
+                embed_sum = one_hot.T @ z_e  # [num_codes, D]
+                self.ema_codebook.copy_(
+                    self.decay * self.ema_codebook + (1 - self.decay) * embed_sum
                 )
 
-                embed_sum = one_hot.T @ z_e
-                self.ema_codebook.mul_(self.decay).add_(
-                    embed_sum, alpha=(1 - self.decay)
-                )
-
+                # Update codebook
                 n = self.ema_cluster_size.sum()
                 cluster_size_norm = (self.ema_cluster_size + self.epsilon) / (
                     n + self.num_codes * self.epsilon
@@ -130,34 +136,42 @@ class LFQQuantizerEMA_KMeans(nn.Module):
             # Utilization tracking (TRAINING ONLY)
             # ---------------------------------------------------------
             with torch.no_grad():
-                self.usage_counts += cluster_size
-                self.usage_ma = 0.99 * self.usage_ma + 0.01 * (cluster_size > 0).float()
+                cluster_size_squeezed = cluster_size.squeeze(0)
+                self.usage_counts.add_(cluster_size_squeezed)
+                self.usage_ma.mul_(0.99).add_(cluster_size_squeezed > 0, alpha=0.01)
 
-                p = cluster_size / (cluster_size.sum() + 1e-8)
+                p = cluster_size_squeezed / (cluster_size_squeezed.sum() + 1e-8)
                 entropy = -(p * (p + 1e-8).log()).sum()
-                self.entropy_ma = 0.99 * self.entropy_ma + 0.01 * entropy
+                self.entropy_ma.mul_(0.99).add_(entropy, alpha=0.01)
 
             # ---------------------------------------------------------
             # Dead code replacement (TRAINING ONLY)
             # ---------------------------------------------------------
             dead = self.usage_counts < self.dead_threshold
             if dead.any():
-                dead_idx = dead.nonzero(as_tuple=False).squeeze(1)
+                dead_idx = dead.nonzero(as_tuple=True)[0]
 
                 if self.replace_strategy == "nearest":
-                    alive = (~dead).nonzero(as_tuple=False).squeeze(1)
+                    alive = (~dead).nonzero(as_tuple=True)[0]
                     if len(alive) > 0:
-                        alive_codes = self.codebook[alive]
-                        for idx in dead_idx:
-                            code = self.codebook[idx]
-                            dist = torch.norm(alive_codes - code.unsqueeze(0), dim=-1)
-                            nearest = alive[torch.argmin(dist)]
-                            self.codebook.data[idx] = self.codebook.data[nearest]
+                        alive_codes = self.codebook[alive]  # [num_alive, D]
+                        dead_codes = self.codebook[dead_idx]  # [num_dead, D]
+
+                        # Compute distances efficiently: [num_dead, num_alive]
+                        dead_norm = (dead_codes**2).sum(dim=1, keepdim=True)
+                        alive_norm = (alive_codes**2).sum(dim=1, keepdim=True).T
+                        dists = (
+                            dead_norm + alive_norm - 2 * (dead_codes @ alive_codes.T)
+                        )
+                        nearest = alive[dists.argmin(dim=1)]
+
+                        self.codebook.data[dead_idx] = self.codebook.data[nearest]
                 else:
-                    rand_ids = torch.randint(0, B, (len(dead_idx),), device=z_e.device)
+                    rand_ids = torch.randint(
+                        0, B, (dead_idx.shape[0],), device=z_e.device
+                    )
                     self.codebook.data[dead_idx] = z_e[rand_ids].detach()
 
-        # During inference, NONE of the above runs.
         return z_q, indices
 
 
@@ -256,15 +270,20 @@ class LFQQuantizerEMA(nn.Module):
         """
 
         # LFQ sign logic
-        z_e_sign = (2 * torch.sign(z_e) + 1).unsqueeze(1)
-        z_e_sign = torch.clamp(z_e_sign, max=1)
+        # z_e_sign = (2 * torch.sign(z_e) + 1).unsqueeze(1)
+        # z_e_sign = torch.clamp(z_e_sign, max=1)
 
-        # distances
-        z_e_exp = z_e.unsqueeze(1)
-        cb_exp = self.codebook.unsqueeze(0)
+        # # distances
+        # z_e_exp = z_e.unsqueeze(1)
+        # cb_exp = self.codebook.unsqueeze(0)
 
-        distances = torch.norm(z_e_sign * (z_e_exp - cb_exp), dim=-1)
-        indices = torch.argmin(distances, dim=-1)
+        # distances = torch.norm(z_e_sign * (z_e_exp - cb_exp), dim=-1)
+        # indices = torch.argmin(distances, dim=-1)
+        # z_q = self.codebook[indices]
+
+        diff = z_e.unsqueeze(1) - self.codebook.unsqueeze(0)  # [B, K, D]
+        distances = (diff * diff).sum(-1)  # squared L2
+        indices = distances.argmin(-1)
         z_q = self.codebook[indices]
 
         # -----------------------
@@ -400,7 +419,7 @@ class HierarchicalLFQHVQVAE(nn.Module):
         # Total loss
         # ============================
         loss = (
-            recon_loss + 0.25 * (commit_z + codebook_z) + 0.25 * (commit_q + codebook_q)
+            recon_loss + 0.02 * (commit_z + codebook_z) + 0.04 * (commit_q + codebook_q)
         )
         with torch.no_grad():
             z_used = (self.z_quantizer.ema_cluster_size > 0).sum().item()

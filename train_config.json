@@ -71,43 +71,43 @@
     "train": {
         "data": [
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCabToCounter/mg/2024-07-12-04-33-29/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCabToCounter/mg/2024-07-12-04-33-29/demo_gentex_im128_randcams.hdf5",
                 "horizon": 500,
                 "do_eval": false,
                 "filter_key": "50_demos"
             },
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToSink/mg/2024-05-04-22-14-06_and_2024-05-07-07-40-17/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToSink/mg/2024-05-04-22-14-06_and_2024-05-07-07-40-17/demo_gentex_im128_randcams.hdf5",
                 "horizon": 700,
                 "do_eval": false,
                 "filter_key": "50_demos"
             },
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPSinkToCounter/mg/2024-05-04-22-14-34_and_2024-05-07-07-40-21/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPSinkToCounter/mg/2024-05-04-22-14-34_and_2024-05-07-07-40-21/demo_gentex_im128_randcams.hdf5",
                 "horizon": 500,
                 "do_eval": false,
                 "filter_key": "50_demos"
             },
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToMicrowave/mg/2024-05-04-22-13-21_and_2024-05-07-07-41-17/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToMicrowave/mg/2024-05-04-22-13-21_and_2024-05-07-07-41-17/demo_gentex_im128_randcams.hdf5",
                 "horizon": 600,
                 "do_eval": false,
                 "filter_key": "50_demos"
             },
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPMicrowaveToCounter/mg/2024-05-04-22-14-26_and_2024-05-07-07-41-42/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPMicrowaveToCounter/mg/2024-05-04-22-14-26_and_2024-05-07-07-41-42/demo_gentex_im128_randcams.hdf5",
                 "horizon": 500,
                 "do_eval": false,
                 "filter_key": "50_demos"
             },
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToStove/mg/2024-05-04-22-14-20/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToStove/mg/2024-05-04-22-14-20/demo_gentex_im128_randcams.hdf5",
                 "horizon": 500,
                 "do_eval": false,
                 "filter_key": "50_demos"
             },
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPStoveToCounter/mg/2024-05-04-22-14-40/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPStoveToCounter/mg/2024-05-04-22-14-40/demo_gentex_im128_randcams.hdf5",
                 "horizon": 500,
                 "do_eval": false,
                 "filter_key": "50_demos"
@@ -297,7 +297,7 @@
         }
     },
     "meta": {
-        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/robomimic/exps/templates/icl_hvqvae.json",
+        "hp_base_config_file": "/workspace/Robot-Manipulation-VQ-VAE/robomimic/exps/templates/icl_hvqvae.json",
         "hp_keys": [
             "seed",
             "ds",

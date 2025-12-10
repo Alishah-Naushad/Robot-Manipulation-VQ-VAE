@@ -1,0 +1,5 @@
+[default]
+entity = fawad-super-FAST NUCES
+project = fawad_heirarchal_v1
+base_url = https://api.wandb.ai
+

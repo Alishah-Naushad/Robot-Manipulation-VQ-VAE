@@ -63,7 +63,7 @@ def train(config, device, eval_only=False):
 
     if config.experiment.logging.terminal_output_to_txt:
         # log stdout and stderr to a text file
-        logger = PrintLogger(os.path.join(log_dir, 'log.txt'))
+        logger = PrintLogger(os.path.join(log_dir, "log.txt"))
         sys.stdout = logger
         sys.stderr = logger
 
@@ -77,17 +77,22 @@ def train(config, device, eval_only=False):
         dataset_path = os.path.expanduser(dataset_cfg["path"])
         ds_format = config.train.data_format
         if not os.path.exists(dataset_path):
-            raise Exception("Dataset at provided path {} not found!".format(dataset_path))
+            raise Exception(
+                "Dataset at provided path {} not found!".format(dataset_path)
+            )
 
         # load basic metadata from training file
         print("\n============= Loaded Environment Metadata =============")
-        env_meta = FileUtils.get_env_metadata_from_dataset(dataset_path=dataset_path, ds_format=ds_format)
+        env_meta = FileUtils.get_env_metadata_from_dataset(
+            dataset_path=dataset_path, ds_format=ds_format
+        )
 
         # populate language instruction for env in env_meta
         env_meta["env_lang"] = dataset_cfg.get("lang", None)
 
         # update env meta if applicable
         from robomimic.utils.script_utils import deep_update
+
         deep_update(env_meta, dataset_cfg.get("env_meta_update_dict", {}))
         deep_update(env_meta, config.experiment.env_meta_update_dict)
         env_meta_list.append(env_meta)
@@ -97,14 +102,19 @@ def train(config, device, eval_only=False):
             action_keys=config.train.action_keys,
             all_obs_keys=config.all_obs_keys,
             ds_format=ds_format,
-            verbose=True
+            verbose=True,
         )
         action_size = shape_meta["ac_dim"]
         shape_meta_list.append(shape_meta)
 
     if config.experiment.env is not None:
         env_meta["env_name"] = config.experiment.env
-        print("=" * 30 + "\n" + "Replacing Env to {}\n".format(env_meta["env_name"]) + "=" * 30)
+        print(
+            "=" * 30
+            + "\n"
+            + "Replacing Env to {}\n".format(env_meta["env_name"])
+            + "=" * 30
+        )
 
     eval_env_meta_list = []
     eval_shape_meta_list = []
@@ -119,10 +129,13 @@ def train(config, device, eval_only=False):
         eval_env_name_list.append(env_meta_list[dataset_i]["env_name"])
         horizon = dataset_cfg.get("horizon", config.experiment.rollout.horizon)
         eval_env_horizon_list.append(horizon)
-    
+
     # create environments
     def env_iterator():
-        for (env_meta, shape_meta, env_name) in zip(eval_env_meta_list, eval_shape_meta_list, eval_env_name_list):
+        for (env_meta, shape_meta, env_name) in zip(
+            eval_env_meta_list, eval_shape_meta_list, eval_env_name_list
+        ):
+
             def create_env_helper(env_i=0):
                 env_kwargs = dict(
                     env_meta=env_meta,
@@ -134,13 +147,19 @@ def train(config, device, eval_only=False):
                 )
                 env = EnvUtils.create_env_from_metadata(**env_kwargs)
                 # handle environment wrappers
-                env = EnvUtils.wrap_env_from_config(env, config=config)  # apply environment warpper, if applicable
+                env = EnvUtils.wrap_env_from_config(
+                    env, config=config
+                )  # apply environment warpper, if applicable
 
                 return env
 
             if config.experiment.rollout.batched:
                 from tianshou.env import SubprocVectorEnv
-                env_fns = [lambda env_i=i: create_env_helper(env_i) for i in range(config.experiment.rollout.num_batch_envs)]
+
+                env_fns = [
+                    lambda env_i=i: create_env_helper(env_i)
+                    for i in range(config.experiment.rollout.num_batch_envs)
+                ]
                 env = SubprocVectorEnv(env_fns)
                 # env_name = env.get_env_attr(key="name", id=0)[0]
             else:
@@ -165,15 +184,21 @@ def train(config, device, eval_only=False):
         ac_dim=shape_meta_list[0]["ac_dim"],
         device=device,
     )
-    
+
     # save the config as a json file
-    with open(os.path.join(log_dir, '..', 'config.json'), 'w') as outfile:
+    with open(os.path.join(log_dir, "..", "config.json"), "w") as outfile:
         json.dump(config, outfile, indent=4)
 
     ckpt_path = config.experiment.ckpt_path
+    # ckpt_path ='/workspace/model_epoch_400.pth'
+    # print("LOADING MODEL WEIGHTS FROM " + ckpt_path)
+    # from robomimic.utils.file_utils import maybe_dict_from_checkpoint
+    # ckpt_dict = maybe_dict_from_checkpoint(ckpt_path=ckpt_path)
+    # model.deserialize(ckpt_dict["model"])
     if ckpt_path is not None and os.path.isfile(os.path.expanduser(ckpt_path)):
         print("LOADING MODEL WEIGHTS FROM " + ckpt_path)
         from robomimic.utils.file_utils import maybe_dict_from_checkpoint
+
         ckpt_dict = maybe_dict_from_checkpoint(ckpt_path=ckpt_path)
         model.deserialize(ckpt_dict["model"])
 
@@ -186,7 +211,8 @@ def train(config, device, eval_only=False):
         device=device,
     )
     trainset, validset = TrainUtils.load_data_for_training(
-        config, obs_keys=shape_meta["all_obs_keys"], lang_encoder=lang_encoder)
+        config, obs_keys=shape_meta["all_obs_keys"], lang_encoder=lang_encoder
+    )
     train_sampler = trainset.get_dataset_sampler()
     print("\n============= Training Dataset =============")
     print(trainset)
@@ -211,7 +237,7 @@ def train(config, device, eval_only=False):
         batch_size=config.train.batch_size,
         shuffle=(train_sampler is None),
         num_workers=config.train.num_data_workers,
-        drop_last=True
+        drop_last=True,
     )
 
     context_data_loader = DataLoader(
@@ -220,7 +246,7 @@ def train(config, device, eval_only=False):
         batch_size=1,
         shuffle=(train_sampler is None),
         num_workers=config.train.num_data_workers,
-        drop_last=True
+        drop_last=True,
     )
 
     if config.experiment.validate:
@@ -233,29 +259,39 @@ def train(config, device, eval_only=False):
             batch_size=config.train.batch_size,
             shuffle=(valid_sampler is None),
             num_workers=num_workers,
-            drop_last=True
+            drop_last=True,
         )
     else:
         valid_loader = None
 
     # print all warnings before training begins
     print("*" * 50)
-    print("Warnings generated by robomimic have been duplicated here (from above) for convenience. Please check them carefully.")
+    print(
+        "Warnings generated by robomimic have been duplicated here (from above) for convenience. Please check them carefully."
+    )
     flush_warnings()
     print("*" * 50)
     print("")
 
     # main training loop
     best_valid_loss = None
-    best_return = {k: -np.inf for k in eval_env_name_list} if config.experiment.rollout.enabled else None
-    best_success_rate = {k: -1. for k in eval_env_name_list} if config.experiment.rollout.enabled else None
+    best_return = (
+        {k: -np.inf for k in eval_env_name_list}
+        if config.experiment.rollout.enabled
+        else None
+    )
+    best_success_rate = (
+        {k: -1.0 for k in eval_env_name_list}
+        if config.experiment.rollout.enabled
+        else None
+    )
     last_ckpt_time = time.time()
 
     # number of learning steps per epoch (defaults to a full dataset pass)
     train_num_steps = config.experiment.epoch_every_n_steps
     valid_num_steps = config.experiment.validation_epoch_every_n_steps
-    
-    for epoch in range(0, config.train.num_epochs + 1): # epoch numbers start at 1        
+
+    for epoch in range(0, config.train.num_epochs + 1):  # epoch numbers start at 1
         # if checkpoint directory is specified, load in new ckpt if exists
         ckpt_path = config.experiment.ckpt_path
         if ckpt_path is not None and os.path.isdir(os.path.expanduser(ckpt_path)):
@@ -263,9 +299,10 @@ def train(config, device, eval_only=False):
             if os.path.exists(ckpt_path):
                 print("LOADING MODEL WEIGHTS FROM " + ckpt_path)
                 from robomimic.utils.file_utils import maybe_dict_from_checkpoint
+
                 ckpt_dict = maybe_dict_from_checkpoint(ckpt_path=ckpt_path)
                 model.deserialize(ckpt_dict["model"])
-        
+
         if epoch > 0 and not eval_only:
             step_log = TrainUtils.run_epoch(
                 model=model,
@@ -282,12 +319,17 @@ def train(config, device, eval_only=False):
             # check for recurring checkpoint saving conditions
             should_save_ckpt = False
             if config.experiment.save.enabled:
-                time_check = (config.experiment.save.every_n_seconds is not None) and \
-                    (time.time() - last_ckpt_time > config.experiment.save.every_n_seconds)
-                epoch_check = (config.experiment.save.every_n_epochs is not None) and \
-                    (epoch > 0) and (epoch % config.experiment.save.every_n_epochs == 0)
-                epoch_list_check = (epoch in config.experiment.save.epochs)
-                should_save_ckpt = (time_check or epoch_check or epoch_list_check)
+                time_check = (config.experiment.save.every_n_seconds is not None) and (
+                    time.time() - last_ckpt_time
+                    > config.experiment.save.every_n_seconds
+                )
+                epoch_check = (
+                    (config.experiment.save.every_n_epochs is not None)
+                    and (epoch > 0)
+                    and (epoch % config.experiment.save.every_n_epochs == 0)
+                )
+                epoch_list_check = epoch in config.experiment.save.epochs
+                should_save_ckpt = time_check or epoch_check or epoch_list_check
             ckpt_reason = None
             if should_save_ckpt:
                 last_ckpt_time = time.time()
@@ -304,10 +346,18 @@ def train(config, device, eval_only=False):
             # Evaluate the model on validation set
             if config.experiment.validate:
                 with torch.no_grad():
-                    step_log = TrainUtils.run_epoch(model=model, data_loader=valid_loader, epoch=epoch, validate=True, num_steps=valid_num_steps)
+                    step_log = TrainUtils.run_epoch(
+                        model=model,
+                        data_loader=valid_loader,
+                        epoch=epoch,
+                        validate=True,
+                        num_steps=valid_num_steps,
+                    )
                 for k, v in step_log.items():
                     if k.startswith("Time_"):
-                        data_logger.record("Timing_Stats/Valid_{}".format(k[5:]), v, epoch)
+                        data_logger.record(
+                            "Timing_Stats/Valid_{}".format(k[5:]), v, epoch
+                        )
                     else:
                         data_logger.record("Valid/{}".format(k), v, epoch)
 
@@ -316,9 +366,14 @@ def train(config, device, eval_only=False):
 
                 # save checkpoint if achieve new best validation loss
                 valid_check = "Loss" in step_log
-                if valid_check and (best_valid_loss is None or (step_log["Loss"] <= best_valid_loss)):
+                if valid_check and (
+                    best_valid_loss is None or (step_log["Loss"] <= best_valid_loss)
+                ):
                     best_valid_loss = step_log["Loss"]
-                    if config.experiment.save.enabled and config.experiment.save.on_best_validation:
+                    if (
+                        config.experiment.save.enabled
+                        and config.experiment.save.on_best_validation
+                    ):
                         epoch_ckpt_name += "_best_validation_{}".format(best_valid_loss)
                         should_save_ckpt = True
                         ckpt_reason = "valid" if ckpt_reason is None else ckpt_reason
@@ -333,8 +388,14 @@ def train(config, device, eval_only=False):
 
         # do rollouts at fixed rate or if it's time to save a new ckpt
         video_paths = None
-        rollout_check = (epoch % config.experiment.rollout.rate == 0) #or (should_save_ckpt and ckpt_reason == "time") # remove this section condition, not desired when rollouts are expensive and saving frequent checkpoints
-        if config.experiment.rollout.enabled and (epoch > config.experiment.rollout.warmstart) and rollout_check:
+        rollout_check = (
+            epoch % config.experiment.rollout.rate == 0
+        )  # or (should_save_ckpt and ckpt_reason == "time") # remove this section condition, not desired when rollouts are expensive and saving frequent checkpoints
+        if (
+            config.experiment.rollout.enabled
+            and (epoch > config.experiment.rollout.warmstart)
+            and rollout_check
+        ):
             # wrap model as a RolloutPolicy to prepare for rollouts
             if "icl" in config.algo_name:
                 rollout_model = ICLRolloutPolicy(
@@ -361,7 +422,9 @@ def train(config, device, eval_only=False):
 
             # context_batch = dict()
             context_batch = model.process_batch_for_training(batch)
-            context_batch = model.postprocess_batch_for_training(context_batch, obs_normalization_stats=obs_normalization_stats)
+            context_batch = model.postprocess_batch_for_training(
+                context_batch, obs_normalization_stats=obs_normalization_stats
+            )
             # context_batch["obs"] = {k: batch["obs"][k][:, 0, :] for k in batch["obs"]}
             # context_batch["goal_obs"] = batch.get("goal_obs", None) # goals may not be present
             # context_batch["actions"] = batch["actions"][:, 0, :]
@@ -425,14 +488,19 @@ def train(config, device, eval_only=False):
             best_return = updated_stats["best_return"]
             best_success_rate = updated_stats["best_success_rate"]
             epoch_ckpt_name = updated_stats["epoch_ckpt_name"]
-            should_save_ckpt = (config.experiment.save.enabled and updated_stats["should_save_ckpt"]) or should_save_ckpt
+            should_save_ckpt = (
+                config.experiment.save.enabled and updated_stats["should_save_ckpt"]
+            ) or should_save_ckpt
             if updated_stats["ckpt_reason"] is not None:
                 ckpt_reason = updated_stats["ckpt_reason"]
 
         # check if we need to save model MSE
         should_save_mse = False
         if config.experiment.mse.enabled:
-            if config.experiment.mse.every_n_epochs is not None and epoch % config.experiment.mse.every_n_epochs == 0:
+            if (
+                config.experiment.mse.every_n_epochs is not None
+                and epoch % config.experiment.mse.every_n_epochs == 0
+            ):
                 should_save_mse = True
             if config.experiment.mse.on_save_ckpt and should_save_ckpt:
                 should_save_mse = True
@@ -447,17 +515,16 @@ def train(config, device, eval_only=False):
                 validset,
                 num_samples=config.experiment.mse.num_samples,
                 savedir=save_vis_dir,
-            )    
+            )
             for k, v in mse_log.items():
                 data_logger.record("{}".format(k), v, epoch)
-            
-            for k, v in vis_log.items():
-                data_logger.record("{}".format(k), v, epoch, data_type='image')
 
+            for k, v in vis_log.items():
+                data_logger.record("{}".format(k), v, epoch, data_type="image")
 
             print("MSE Log Epoch {}".format(epoch))
             print(json.dumps(mse_log, sort_keys=True, indent=4))
-        
+
         # # Only keep saved videos if the ckpt should be saved (but not because of validation score)
         # should_save_video = (should_save_ckpt and (ckpt_reason != "valid")) or config.experiment.keep_all_videos
         # if video_paths is not None and not should_save_video:
@@ -465,7 +532,7 @@ def train(config, device, eval_only=False):
         #         os.remove(video_paths[env_name])
 
         # Save model checkpoints based on conditions (success rate, validation loss, etc)
-        if should_save_ckpt:    
+        if should_save_ckpt:
             TrainUtils.save_model(
                 model=model,
                 config=config,
@@ -489,7 +556,7 @@ def train(config, device, eval_only=False):
 def main(args):
 
     if args.config is not None:
-        ext_cfg = json.load(open(args.config, 'r'))
+        ext_cfg = json.load(open(args.config, "r"))
         config = config_factory(ext_cfg["algo_name"])
         # update config with external json - this will throw errors if
         # the external config has keys not present in the base algo config
@@ -576,15 +643,15 @@ if __name__ == "__main__":
     # debug mode
     parser.add_argument(
         "--debug",
-        action='store_true',
-        help="set this flag to run a quick training run for debugging purposes"
+        action="store_true",
+        help="set this flag to run a quick training run for debugging purposes",
     )
 
     # debug mode
     parser.add_argument(
         "--eval_only",
-        action='store_true',
-        help="disables training and only runs policy evaluation. config must include ckpt_path"
+        action="store_true",
+        help="disables training and only runs policy evaluation. config must include ckpt_path",
     )
 
     args = parser.parse_args()

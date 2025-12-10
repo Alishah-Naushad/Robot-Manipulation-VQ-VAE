@@ -20,7 +20,7 @@ import torch.distributions as D
 import torchvision.transforms as T
 from torch.nn.utils import spectral_norm
 
-from mamba_ssm import Mamba
+# from mamba_ssm import Mamba
 from transformers import AutoProcessor
 import clip
 
@@ -1236,12 +1236,13 @@ class ICLObservationGroupEncoder(Module):
                 num_q_codes=128,
             )
         elif ln_act_enabled:
-            self.action_network = Mamba(
-                d_model=action_input_shape,  # Model dimension d_model
-                d_state=8,  # SSM state expansion factor
-                d_conv=4,  # Local convolution width
-                expand=2,  # Block expansion factor
-            )
+            print("zz")
+            # self.action_network = Mamba(
+            #     d_model=action_input_shape,  # Model dimension d_model
+            #     d_state=8,  # SSM state expansion factor
+            #     d_conv=4,  # Local convolution width
+            #     expand=2,  # Block expansion factor
+            # )
 
             self.ln_act_layer = nn.Sequential(
                 nn.Linear(action_input_shape, 64),
@@ -1305,10 +1306,10 @@ class ICLObservationGroupEncoder(Module):
             # pass through encoder
             outputs.append(self.nets[obs_group].forward(inputs[obs_group]))
 
-        seq_len = 64  # FIXME
+        seq_len = 16  # FIXME
         batch_size = outputs[0].data.shape[0]
         batch_size = int(batch_size / seq_len)
-        batch_size = 16
+        batch_size = 64
 
         obs = torch.cat(outputs, dim=-1)
         context_obs = self.nets["obs"].forward(prompt_obs)
@@ -1351,6 +1352,7 @@ class ICLObservationGroupEncoder(Module):
             output_dict = self.action_network(prompt_actions)
             loss = output_dict["loss"]
             context_actions = output_dict["q_q"]
+            print("getting q_q context actions")
             # context_actions, loss = self.action_network(prompt_actions)
             self._vq_vae_loss = loss
         elif self.ln_act_enabled:
@@ -2763,12 +2765,12 @@ class ICL_MIMO_Mamba(Module):
         self.nets["embed_drop"] = nn.Dropout(mamba_emb_dropout)
 
         # Mamba backbone
-        self.nets["mamba"] = Mamba(
-            d_model=mamba_embed_dim,  # Model dimension d_model
-            d_state=mamba_num_heads,  # SSM state expansion factor
-            d_conv=4,  # Local convolution width
-            expand=mamba_num_layers,  # Block expansion factor
-        )
+        # self.nets["mamba"] = Mamba(
+        #     d_model=mamba_embed_dim,  # Model dimension d_model
+        #     d_state=mamba_num_heads,  # SSM state expansion factor
+        #     d_conv=4,  # Local convolution width
+        #     expand=mamba_num_layers,  # Block expansion factor
+        # )
 
         # decoder for output modalities
         self.nets["decoder"] = ObservationDecoder(

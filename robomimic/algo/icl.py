@@ -837,7 +837,8 @@ class ICLTransformer(ICL):
             input_batch["actions"] = batch["actions"][:, h - 1, :]
 
         if self.pred_future_acs:
-
+            print(h)
+            print(input_batch["actions"].shape)
             assert input_batch["actions"].shape[1] == h
 
         input_batch = TensorUtils.to_device(
@@ -1568,7 +1569,7 @@ class ICLTransformer_GMM(ICLTransformer):
         info = OrderedDict()
 
         # ✓ Combine policy loss with VQ-VAE loss for single backward
-        combined_loss = losses["action_loss"] + 0.1 * vq_loss
+        combined_loss = losses["action_loss"] + 0.2 * vq_loss
 
         # ✓ Single backward pass - memory efficient, no graph conflicts
         policy_grad_norms = TorchUtils.backprop_for_loss(
@@ -1602,6 +1603,55 @@ class ICLTransformer_GMM(ICLTransformer):
         if "policy_grad_norms" in info:
             log["Policy_Grad_Norms"] = info["policy_grad_norms"]
         return log
+
+    def get_action(self, obs_dict, context_batch, goal_dict=None):
+        """
+        Get policy action outputs.
+        Args:
+            obs_dict (dict): current observation
+            goal_dict (dict): (optional) goal
+        Returns:
+            action (torch.Tensor): action tensor
+        """
+        assert not self.nets.training
+
+        context_obs = context_batch["obs"]
+        context_action = context_batch["actions"]
+        # print(self.nets.keys())
+        # print('after first print')
+        # print(self.nets["policy"]._modules.keys())
+        # print('after second print')
+        # print(self.nets["policy"]._modules["nets"]._modules.keys())
+        # print('after third print')
+        encoder = self.nets["policy"].nets.encoder
+        print(encoder._modules.keys())
+        print(context_action.shape)
+        input_dict = {
+            "obs": context_obs,  # required by observation_group_shapes check
+            "action": context_action,
+            "prompt": {  # required by the internal forward logic
+                "obs": context_obs,
+                "action": context_action,
+            },
+        }
+
+        # output_dict = encoder.forward(**input_dict)
+        # output_dict = encoder.forward(obs=context_obs, action=context_action)
+        # context_action = output_dict['q_q']
+
+        output = self.nets["policy"](
+            obs_dict, context_obs, actions=context_action, goal_dict=goal_dict
+        )
+
+        if self.supervise_all_steps:
+            if self.algo_config.transformer.pred_future_acs:
+                output = output[:, 0, :]
+            else:
+                output = output[:, -1, :]
+        else:
+            output = output[:, -1, :]
+
+        return output
 
     def deserialize(self, state_dict):
         """

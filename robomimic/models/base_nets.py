@@ -730,10 +730,32 @@ class ResNet18ConvFiLM(ConvBase):
         return [self._output_channels, out_h, out_w]
 
     def forward(self, inputs, lang_emb):
-        x = self._base_block(inputs)
+        """
+        Forward pass that handles both:
+        - single-frame input: [B, C, H, W]
+        - multi-frame input:  [B, T, C, H, W]
+        """
+        is_temporal = inputs.ndim == 5  # check if [B, T, C, H, W]
+
+        if is_temporal:
+            B, T, C, H, W = inputs.shape
+            x = inputs.view(B * T, C, H, W)  # merge batch and time
+        else:
+            x = inputs
+            B, T = 1, 1  # for consistent reshaping later
+
+        # Base block
+        x = self._base_block(x)
+
+        # Apply conv + FiLM layers
         for conv, film in zip(self._conv_blocks, self._film_layers):
             x = conv(x)
             x = film(x, lang_emb)
+
+        # Reshape back to [B, T, ...] if temporal
+        if is_temporal:
+            feat_shape = x.shape[1:]  # keep everything except batch dim
+            x = x.view(B, T, *feat_shape)
 
         return x
 

@@ -1,7 +1,7 @@
 {
     "algo_name": "icl",
     "experiment": {
-        "name": "512_128_lipvq",
+        "name": "512_128_lipvq_gmm_divide_less_frame_stack",
         "validate": false,
         "logging": {
             "terminal_output_to_txt": true,
@@ -75,59 +75,23 @@
                 "obj_instance_split": "B"
             }
         },
-        "ckpt_path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm/20251206021655/models/model_epoch_300.pth"
+        "ckpt_path": "/workspace/Robot-Manipulation-VQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm_divide_less_frame_stack/20251208171843/models/model_epoch_100.pth"
     },
     "train": {
         "data": [
             {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCabToCounter/mg/2024-07-12-04-33-29/demo_gentex_im128_randcams.hdf5",
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCabToCounter/mg/2024-07-12-04-33-29/demo_gentex_im128_randcams.hdf5",
+                "horizon": 500,
+                "do_eval": false,
+                "filter_key": "50_demos",
+                "eval": true
+            },            {
+                "path": "/workspace/Robot-Manipulation-VQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToCab/mg/2024-05-04-22-12-27_and_2024-05-07-07-39-33/demo_gentex_im128_randcams.hdf5",
                 "horizon": 500,
                 "do_eval": true,
-                "filter_key": "50_demos",
-                "eval": true
-            },
-            {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToSink/mg/2024-05-04-22-14-06_and_2024-05-07-07-40-17/demo_gentex_im128_randcams.hdf5",
-                "horizon": 700,
-                "do_eval": false,
-                "filter_key": "50_demos",
-                "eval": true
-            },
-            {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPSinkToCounter/mg/2024-05-04-22-14-34_and_2024-05-07-07-40-21/demo_gentex_im128_randcams.hdf5",
-                "horizon": 500,
-                "do_eval": false,
-                "filter_key": "50_demos",
-                "eval": true
-            },
-            {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToMicrowave/mg/2024-05-04-22-13-21_and_2024-05-07-07-41-17/demo_gentex_im128_randcams.hdf5",
-                "horizon": 600,
-                "do_eval": false,
-                "filter_key": "50_demos",
-                "eval": true
-            },
-            {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPMicrowaveToCounter/mg/2024-05-04-22-14-26_and_2024-05-07-07-41-42/demo_gentex_im128_randcams.hdf5",
-                "horizon": 500,
-                "do_eval": false,
-                "filter_key": "50_demos",
-                "eval": true
-            },
-            {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPCounterToStove/mg/2024-05-04-22-14-20/demo_gentex_im128_randcams.hdf5",
-                "horizon": 500,
-                "do_eval": false,
-                "filter_key": "50_demos",
-                "eval": true
-            },
-            {
-                "path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/datasets/v0.1/single_stage/kitchen_pnp/PnPStoveToCounter/mg/2024-05-04-22-14-40/demo_gentex_im128_randcams.hdf5",
-                "horizon": 500,
-                "do_eval": false,
-                "filter_key": "50_demos",
-                "eval": true
+                "filter_key": "50_demos"
             }
+          
         ],
         "output_dir": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/robocasa/11-29-fawad_hierarchal_v1/1024_512",
         "num_data_workers": 0,
@@ -137,9 +101,9 @@
         "hdf5_normalize_obs": false,
         "hdf5_filter_key": null,
         "hdf5_validation_filter_key": null,
-        "seq_length": 64,
+        "seq_length": 16,
         "pad_seq_length": true,
-        "frame_stack": 64,
+        "frame_stack": 16,
         "pad_frame_stack": true,
         "dataset_keys": [
             "actions"
@@ -375,7 +339,7 @@
         }
     },
     "meta": {
-        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm/20251206021655/config.json",
+        "hp_base_config_file": "/workspace/Robot-Manipulation-VQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm_divide_less_frame_stack/20251208171843/config.json",
         "hp_keys": [
             "seed",
             "ds",
@@ -384,7 +348,7 @@
         "hp_values": [
             123,
             "ckpt_datasets",
-            "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm/20251206021655/models/model_epoch_300.pth"
+            "/workspace/Robot-Manipulation-VQ-VAE/expdata/robocasa/fawad_heirarchal_v1/512_128_lipvq_gmm_divide_less_frame_stack/20251208171843/models/model_epoch_100.pth"
         ]
     }
 }

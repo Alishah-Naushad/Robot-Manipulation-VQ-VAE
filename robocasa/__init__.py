@@ -318,9 +318,9 @@ import numpy
 
 import robosuite
 
-assert robosuite.__version__ in [
-    "1.5.0"
-], "robosuite version must be 1.5.0. Please install the correct version"
+# assert robosuite.__version__ in [
+#     "1.5.0"
+# ], "robosuite version must be 1.5.0. Please install the correct version"
 
 __version__ = "0.2.0"
 __logo__ = """

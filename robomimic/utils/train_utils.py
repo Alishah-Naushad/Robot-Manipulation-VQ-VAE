@@ -14,6 +14,7 @@ import numpy as np
 import traceback
 from copy import deepcopy
 from collections import OrderedDict
+from torch.cuda.amp import autocast
 
 import torch
 
@@ -984,6 +985,8 @@ def icl_rollout_with_stats(
             # video is written per env
             video_str = "_epoch_{}.mp4".format(epoch) if epoch is not None else ".mp4"
             video_path = os.path.join(video_dir, "{}{}".format(env_name, video_str))
+            # if not os.path.exists(video_path):
+            #     os.makedirs(video_path,exist_ok=True)
             video_writer = imageio.get_writer(video_path, fps=20)
 
         env_video_writer = None
@@ -1234,6 +1237,19 @@ def save_model(
     torch.save(params, ckpt_path)
     print("save checkpoint to {}".format(ckpt_path))
 
+def _sanitize_for_logging(info):
+    """
+    Convert all torch tensors in info to CPU floats.
+    """
+    clean = {}
+    for k, v in info.items():
+        if torch.is_tensor(v):
+            clean[k] = float(v.detach().cpu())
+        elif isinstance(v, (list, tuple)) and len(v) > 0 and torch.is_tensor(v[0]):
+            clean[k] = float(torch.stack(v).mean().detach().cpu())
+        else:
+            clean[k] = v
+    return clean
 
 def run_epoch(
     model,
@@ -1303,7 +1319,10 @@ def run_epoch(
 
         # forward and backward pass
         t = time.time()
-        info = model.train_on_batch(input_batch, epoch, validate=validate)
+        with autocast():
+            info = model.train_on_batch(input_batch, epoch, validate=validate)
+        #info = model.train_on_batch(input_batch, epoch, validate=validate)
+        info = _sanitize_for_logging(info)
         timing_stats["Train_Batch"].append(time.time() - t)
 
         # tensorboard logging
@@ -1313,6 +1332,7 @@ def run_epoch(
         timing_stats["Log_Info"].append(time.time() - t)
 
     # flatten and take the mean of the metrics
+
     step_log_dict = {}
     for i in range(len(step_log_all)):
         for k in step_log_all[i]:

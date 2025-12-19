@@ -1352,7 +1352,7 @@ class ICLObservationGroupEncoder(Module):
             output_dict = self.action_network(prompt_actions)
             loss = output_dict["loss"]
             context_actions = output_dict["q_q"]
-            print("getting q_q context actions")
+            #print("getting q_q context actions")
             # context_actions, loss = self.action_network(prompt_actions)
             self._vq_vae_loss = loss
         elif self.ln_act_enabled:

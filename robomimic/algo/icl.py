@@ -837,8 +837,8 @@ class ICLTransformer(ICL):
             input_batch["actions"] = batch["actions"][:, h - 1, :]
 
         if self.pred_future_acs:
-            print(h)
-            print(input_batch["actions"].shape)
+            # print(h)
+            # print(input_batch["actions"].shape)
             assert input_batch["actions"].shape[1] == h
 
         input_batch = TensorUtils.to_device(
@@ -1420,6 +1420,8 @@ class ICLTransformer_GMM(ICLTransformer):
         assert self.algo_config.transformer.enabled
 
         self.nets = nn.ModuleDict()
+        self.use_amp = True
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
         self.nets["policy"] = PolicyNets.ICLTransformerGMMActorNetwork(
             obs_shapes=self.obs_shapes,
             goal_shapes=self.goal_shapes,
@@ -1580,6 +1582,7 @@ class ICLTransformer_GMM(ICLTransformer):
             retain_graph=False,  # Single backward, no need to retain
         )
         info["policy_grad_norms"] = policy_grad_norms
+        #info["policy_grad_norms"] = float(policy_grad_norms.detach().cpu())
 
         # Step through optimizers
         for k in self.lr_schedulers:
@@ -1587,6 +1590,44 @@ class ICLTransformer_GMM(ICLTransformer):
                 self.lr_schedulers[k].step()
 
         return info
+
+    # def _train_step(self, losses, vq_loss=0):
+    #     """
+    #     AMP-safe single backward for policy + VQ-VAE
+    #     """
+    #     info = OrderedDict()
+
+    #     combined_loss = losses["action_loss"] + 0.2 * vq_loss
+
+    #     optimizer = self.optimizers["policy"]
+    #     net = self.nets["policy"]
+
+    #     optimizer.zero_grad(set_to_none=True)
+
+    #     # 🔥 AMP BACKWARD
+    #     self.scaler.scale(combined_loss).backward()
+
+    #     # 🔥 AMP-SAFE GRAD CLIPPING
+    #     max_norm = self.global_config.train.max_grad_norm
+    #     if max_norm is not None:
+    #         self.scaler.unscale_(optimizer)
+    #         policy_grad_norms = torch.nn.utils.clip_grad_norm_(
+    #             net.parameters(), max_norm
+    #         )
+    #         info["policy_grad_norms"] = policy_grad_norms
+    #     else:
+    #         info["policy_grad_norms"] = None
+
+    #     # 🔥 AMP OPTIMIZER STEP
+    #     self.scaler.step(optimizer)
+    #     self.scaler.update()
+
+    #     # LR schedulers (unchanged)
+    #     for k in self.lr_schedulers:
+    #         if self.lr_schedulers[k] is not None:
+    #             self.lr_schedulers[k].step()
+
+    #     return info
 
     def log_info(self, info):
         """
@@ -1624,8 +1665,8 @@ class ICLTransformer_GMM(ICLTransformer):
         # print(self.nets["policy"]._modules["nets"]._modules.keys())
         # print('after third print')
         encoder = self.nets["policy"].nets.encoder
-        print(encoder._modules.keys())
-        print(context_action.shape)
+        # print(encoder._modules.keys())
+        # print(context_action.shape)
         input_dict = {
             "obs": context_obs,  # required by observation_group_shapes check
             "action": context_action,

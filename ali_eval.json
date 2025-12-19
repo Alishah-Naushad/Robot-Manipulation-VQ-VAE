@@ -6,7 +6,7 @@
         "logging": {
             "terminal_output_to_txt": true,
             "log_tb": true,
-            "log_wandb": true,
+            "log_wandb": false,
             "wandb_proj_name": "robocasa_11-29-fawad_hierarchal_v1_robocasa_im"
         },
         "mse": {
@@ -75,7 +75,7 @@
                 "obj_instance_split": "B"
             }
         },
-        "ckpt_path": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/test_ts2/20251217002646/models/model_epoch_100.pth"
+        "ckpt_path": "/home/retrocausal-train/Desktop/proper_ckpts/models/model_epoch_600.pth"
     },
     "train": {
         "data": [
@@ -136,7 +136,7 @@
                 "eval": true
             }
         ],
-        "output_dir": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/robocasa/11-29-fawad_hierarchal_v1/app_pnp_700",
+        "output_dir": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/robocasa/11-29-fawad_hierarchal_v2/512_128_proper_fix",
         "num_data_workers": 0,
         "hdf5_cache_mode": null,
         "hdf5_use_swmr": true,
@@ -382,7 +382,7 @@
         }
     },
     "meta": {
-        "hp_base_config_file": "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/test_ts2/20251217002646/config.json",
+        "hp_base_config_file": "/home/retrocausal-train/Desktop/proper_ckpts/config.json",
         "hp_keys": [
             "seed",
             "ds",
@@ -391,7 +391,7 @@
         "hp_values": [
             123,
             "ckpt_datasets",
-            "/home/retrocausal-train/Desktop/lipvq/LipVQ-VAE/expdata/robocasa/fawad_heirarchal_v1/test_ts2/20251217002646/models/model_epoch_100.pth"
+            "/home/retrocausal-train/Desktop/proper_ckpts/models/model_epoch_600.pth"
         ]
     }
 }

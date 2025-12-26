@@ -1319,10 +1319,10 @@ def run_epoch(
 
         # forward and backward pass
         t = time.time()
-        with autocast():
-            info = model.train_on_batch(input_batch, epoch, validate=validate)
+        
+        info = model.train_on_batch(input_batch, epoch, validate=validate)
         #info = model.train_on_batch(input_batch, epoch, validate=validate)
-        info = _sanitize_for_logging(info)
+        #info = _sanitize_for_logging(info)
         timing_stats["Train_Batch"].append(time.time() - t)
 
         # tensorboard logging

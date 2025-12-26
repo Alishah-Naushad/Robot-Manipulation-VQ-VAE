@@ -1232,8 +1232,8 @@ class ICLObservationGroupEncoder(Module):
                 feature_dim=action_input_shape,
                 z_dim=action_output_shape,
                 q_dim=action_output_shape,
-                num_z_codes=512,
-                num_q_codes=128,
+                num_z_codes=128,
+                num_q_codes=64,
             )
         elif ln_act_enabled:
             print("zz")

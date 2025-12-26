@@ -54,7 +54,7 @@ def train(config, device, eval_only=False):
     torch.manual_seed(config.train.seed)
 
     # set num workers
-    torch.set_num_threads(1)
+    torch.set_num_threads(10)
 
     print("\n============= New Training Run with Config =============")
     print(config)

@@ -2561,6 +2561,7 @@ class ICLTransformerGMMActorNetwork(ICLTransformerActorNetwork):
 
         # mixture components - make sure that `batch_shape` for the distribution is equal
         # to (batch_size, timesteps, num_modes) since MixtureSameFamily expects this shape
+        #component_distribution = D.Normal(loc=means, scale=scales)
         component_distribution = D.Normal(loc=means, scale=scales)
         component_distribution = D.Independent(
             component_distribution, 1

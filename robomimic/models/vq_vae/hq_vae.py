@@ -387,56 +387,56 @@ class HierarchicalLFQHVQVAE(nn.Module):
     # ------------------------------------------------------------
     def forward(self, x):
 
-        # ============================
-        # 1) Z-LEVEL
-        # ============================
-        h = self.encoder(x)
+            # ============================
+            # 1) Z-LEVEL
+            # ============================
+            h = self.encoder(x)
 
-        z_e = self.to_z_latent(h)
-        # (B, z_dim)
-        z_q, z_idx = self.z_quantizer(z_e)  # EMA quantization
-        # commit_z, codebook_z = self.vq_loss(z_e, z_q)
-        commit_z = F.mse_loss(z_e, z_q.detach())
-        codebook_z = F.mse_loss(z_q, z_e.detach())
-        # ============================
-        # 2) Q-LEVEL (hierarchical)
-        # ============================
-        q_e = self.q_encoder(z_q.detach())  # (B, q_dim)
-        q_q, q_idx = self.q_quantizer(q_e)
-        # commit_q, codebook_q = self.vq_loss(q_e, q_q)
-        commit_q = F.mse_loss(q_e, q_q.detach())
-        codebook_q = F.mse_loss(q_q, q_e.detach())
+            z_e = self.to_z_latent(h)
+            # (B, z_dim)
+            z_q, z_idx = self.z_quantizer(z_e)  # EMA quantization
+            # commit_z, codebook_z = self.vq_loss(z_e, z_q)
+            commit_z = F.mse_loss(z_e, z_q.detach())
+            codebook_z = F.mse_loss(z_q, z_e.detach())
+            # ============================
+            # 2) Q-LEVEL (hierarchical)
+            # ============================
+            q_e = self.q_encoder(z_q.detach())  # (B, q_dim)
+            q_q, q_idx = self.q_quantizer(q_e)
+            # commit_q, codebook_q = self.vq_loss(q_e, q_q)
+            commit_q = F.mse_loss(q_e, q_q.detach())
+            codebook_q = F.mse_loss(q_q, q_e.detach())
 
-        # ============================
-        # Reconstruction
-        # ============================
-        dec_h = self.decoder(q_q)
-        x_recon = self.to_output(dec_h)
+            # ============================
+            # Reconstruction
+            # ============================
+            dec_h = self.decoder(q_q)
+            x_recon = self.to_output(dec_h)
 
-        recon_loss = F.mse_loss(x_recon, x)
+            recon_loss = F.mse_loss(x_recon, x)
 
-        # ============================
-        # Total loss
-        # ============================
-        loss = (
-            recon_loss + 0.02 * (commit_z + codebook_z) + 0.04 * (commit_q + codebook_q)
-        )
-        with torch.no_grad():
-            z_used = (self.z_quantizer.ema_cluster_size > 0).sum().item()
-            q_used = (self.q_quantizer.ema_cluster_size > 0).sum().item()
-            z_util = (self.z_quantizer.ema_cluster_size > 0).float().mean().item()
-            q_util = (self.q_quantizer.ema_cluster_size > 0).float().mean().item()
+            # ============================
+            # Total loss
+            # ============================
+            loss = (
+                recon_loss + 0.02 * (commit_z + codebook_z) + 0.04 * (commit_q + codebook_q)
+            )
+            with torch.no_grad():
+                z_used = (self.z_quantizer.ema_cluster_size > 0).sum().item()
+                q_used = (self.q_quantizer.ema_cluster_size > 0).sum().item()
+                z_util = (self.z_quantizer.ema_cluster_size > 0).float().mean().item()
+                q_util = (self.q_quantizer.ema_cluster_size > 0).float().mean().item()
 
-        return {
-            "loss": loss,
-            "recon_loss": recon_loss,
-            "z_commit": commit_z,
-            "z_codebook": codebook_z,
-            "q_commit": commit_q,
-            "q_codebook": codebook_q,
-            "x_recon": x_recon,
-            "z_q": z_q,
-            "q_q": q_q,
-            "z_indices": z_idx,
-            "q_indices": q_idx,
-        }
+            return {
+                "loss": loss,
+                "recon_loss": recon_loss,
+                "z_commit": commit_z,
+                "z_codebook": codebook_z,
+                "q_commit": commit_q,
+                "q_codebook": codebook_q,
+                "x_recon": x_recon,
+                "z_q": z_q,
+                "q_q": q_q,
+                "z_indices": z_idx,
+                "q_indices": q_idx,
+            }

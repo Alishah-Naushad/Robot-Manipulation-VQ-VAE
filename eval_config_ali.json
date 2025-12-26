@@ -75,7 +75,7 @@
                 "obj_instance_split": "B"
             }
         },
-        "ckpt_path": null
+        "ckpt_path": "/home/retrocausal-train/Desktop/128_64_lipvq/Robot-Manipulation-VQ-VAE/expdata/fawad_heirarchal_v1/128_64/20251220230750/models/model_epoch_400.pth"
     },
     "train": {
         "data": [

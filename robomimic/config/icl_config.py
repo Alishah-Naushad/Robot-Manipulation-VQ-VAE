@@ -128,8 +128,8 @@ class ICLConfig(BaseConfig):
 
         # Hierarchical VQ-VAE settings
         self.algo.transformer.vqvae = Config()
-        self.algo.transformer.vqvae.num_subclusters = 512
-        self.algo.transformer.vqvae.num_clusters = 128
+        self.algo.transformer.vqvae.num_subclusters = 128
+        self.algo.transformer.vqvae.num_clusters = 64
         self.algo.transformer.vqvae.embed_dim = 512
         self.algo.transformer.vqvae.num_stages = 2
         self.algo.transformer.vqvae.num_layers_per_stage = 4
